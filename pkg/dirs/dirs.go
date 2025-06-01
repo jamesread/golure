@@ -5,10 +5,11 @@ import (
 	"path/filepath"
 	"errors"
 	"strings"
-	"fmt"
+
+	log "github.com/sirupsen/logrus"
 )
 
-func GetFirstExistingDirectory(directories []string) (string, error) {
+func GetFirstExistingDirectory(name string, directories []string) (string, error) {
 	for _, dir := range directories {
 		if strings.Contains(dir, "~") {
 			home, _ := os.UserHomeDir()
@@ -23,7 +24,7 @@ func GetFirstExistingDirectory(directories []string) (string, error) {
 
 		stat, err := os.Stat(dir)
 		
-		fmt.Printf("Checking directory: %s %v\n", abspath, stat)
+		log.Debugf("Looking for %v directory at path: %s %v\n", name, abspath)
 
 		if err != nil {
 			continue
