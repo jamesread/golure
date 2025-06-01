@@ -24,14 +24,14 @@ func GetFirstExistingDirectory(name string, directories []string) (string, error
 
 		stat, err := os.Stat(dir)
 		
-		log.Debugf("Looking for %v directory at path: %s\n", name, abspath)
+		log.Debugf("Looking for %v directory at path: %s", name, abspath)
 
 		if err != nil {
 			continue
 		}
 
 		if stat.IsDir() {
-			log.Debugf("Found %v directory at path: %s\n", name, abspath)
+			log.Debugf("Found %v directory at path: %s", name, abspath)
 			return abspath, nil
 		}
 	}
