@@ -10,7 +10,7 @@ func TestGetFirstExistingDirectory(t *testing.T) {
 
 	directories := []string{"/foo/bar", existingDir}
 
-	foundDir, err := GetFirstExistingDirectory(directories)
+	foundDir, err := GetFirstExistingDirectory("test", directories)
 
 	assert.Equal(t, existingDir, foundDir, "Expected to find the existing directory")
 	assert.Nil(t, err, "Expected no error when finding an existing directory")
