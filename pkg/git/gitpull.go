@@ -6,10 +6,18 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strings"
 )
 
-func CloneOrPull(gitUrl string, localDir string) (*easyexec.ExecResult) {
+type CloneOrPullResult struct {
+	RepoName string
+	WasCloned bool
+	ExecResult *easyexec.ExecResult
+}
+
+func CloneOrPull(gitUrl string, localDir string) (*CloneOrPullResult) {
 	repoName := path.Base(gitUrl)
+	repoName = strings.TrimSuffix(repoName, ".git")
 
 	log.WithFields(log.Fields{
 		"gitUrl":    gitUrl,
@@ -22,17 +30,17 @@ func CloneOrPull(gitUrl string, localDir string) (*easyexec.ExecResult) {
 	}
 
 	if _, err := os.Stat(filepath.Join(localDir, repoName)); os.IsNotExist(err) {
-		if err != nil {
-			log.Errorf("%v", err)
-		}
-
 		req := &easyexec.ExecRequest{
 			Executable: "git",
 			Args: []string{"clone", gitUrl},
 			WorkingDirectory: localDir,
 		}
 
-		return easyexec.ExecWithRequest(req)
+		return &CloneOrPullResult{
+			RepoName: repoName,
+			WasCloned: true,
+			ExecResult: easyexec.ExecWithReqLog(req),
+		}
 	} else {
 		if err != nil {
 			log.Errorf("%v", err)
@@ -44,7 +52,11 @@ func CloneOrPull(gitUrl string, localDir string) (*easyexec.ExecResult) {
 			WorkingDirectory: filepath.Join(localDir, repoName),
 		}
 
-		return easyexec.ExecWithReqLog(req)
+		return &CloneOrPullResult{
+			RepoName: repoName,
+			WasCloned: false,
+			ExecResult: easyexec.ExecWithReqLog(req),
+		}
 	}
 }
 
