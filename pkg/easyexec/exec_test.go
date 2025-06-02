@@ -6,7 +6,11 @@ import (
 )
 
 func TestDate(t *testing.T) {
-	ret := ExecShell("date")
+	req := &ExecRequest{
+		Executable: "date",
+	}
+
+	ret := ExecShell(req)
 
 	assert.NotNil(t, ret, "Expected ExecShell to return a result")
 	assert.Equal(t, 0, ret.ExitCode, "Expected exit code to be 0")

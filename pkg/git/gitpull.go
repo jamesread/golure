@@ -22,21 +22,29 @@ func CloneOrPull(gitUrl string, localDir string) (*easyexec.ExecResult) {
 	}
 
 	if _, err := os.Stat(filepath.Join(localDir, repoName)); os.IsNotExist(err) {
-		err = os.Chdir(localDir)
-
 		if err != nil {
 			log.Errorf("%v", err)
 		}
 
-		return easyexec.ExecLog("git", []string {"clone", gitUrl})
+		req := &easyexec.ExecRequest{
+			Executable: "git",
+			Args: []string{"clone", gitUrl},
+			WorkingDirectory: localDir,
+		}
+
+		return easyexec.ExecWithRequest(req)
 	} else {
-		err = os.Chdir(filepath.Join(localDir, repoName))
-
 		if err != nil {
 			log.Errorf("%v", err)
 		}
 
-		return easyexec.ExecLog("git", []string {"pull"})
+		req := &easyexec.ExecRequest{
+			Executable: "git",
+			Args: []string{"pull"},
+			WorkingDirectory: filepath.Join(localDir, repoName),
+		}
+
+		return easyexec.ExecWithReqLog(req)
 	}
 }
 
