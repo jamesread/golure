@@ -1,4 +1,4 @@
-package util
+package git
 
 import (
 	log "github.com/sirupsen/logrus"
@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 )
 
-func GitPull(gitUrl string, localDir string) (*easyexec.ExecResult) {
+func CloneOrPull(gitUrl string, localDir string) (*easyexec.ExecResult) {
 	repoName := path.Base(gitUrl)
 
 	log.WithFields(log.Fields{
