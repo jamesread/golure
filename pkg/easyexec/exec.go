@@ -15,6 +15,7 @@ type ExecResult struct {
 	ExitCode int
 	Error error
 	WorkingDirectory string
+	Timeout float64
 }
 
 type ExecRequest struct {
@@ -22,6 +23,7 @@ type ExecRequest struct {
 	Args []string
 	WorkingDirectory string
 	Timeout float64
+	Log bool
 }	
 
 type OutputStreamer struct {
@@ -51,6 +53,27 @@ func Exec(executable string, args []string, wd string) (*ExecResult) {
 }
 
 func ExecWithRequest(req *ExecRequest) (*ExecResult) {	
+	if req.Log {
+		log.Infof("cmd: %v %v", req.Executable, req.Args)
+		log.Infof("wd: %v", req.WorkingDirectory)
+		log.Infof("timeout: %v", req.Timeout)
+	}
+
+	ret := execImpl(req)
+
+	if (req.Log) {
+		if ret.Error != nil {
+			log.Errorf("err: %v", ret.Error)
+		}
+
+		log.Infof("stdout: %v", ret.Output)
+		log.Infof("timeout: %v", ret.Timeout)
+	}
+
+	return ret
+}
+
+func execImpl(req *ExecRequest) (*ExecResult) {
 	timeout := math.Max(10, req.Timeout)
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(timeout) * time.Second)
@@ -79,20 +102,7 @@ func ExecWithRequest(req *ExecRequest) (*ExecResult) {
 		Error: runerr,
 		ExitCode: cmd.ProcessState.ExitCode(),
 		WorkingDirectory: req.WorkingDirectory,
+		Timeout: timeout,
 	}
 }
 
-func ExecWithReqLog(req *ExecRequest) (*ExecResult) {
-	log.Infof("cmd: %v %v", req.Executable, req.Args)
-	log.Infof("wd: %v", req.WorkingDirectory)
-
-	ret := Exec(req.Executable, req.Args, req.WorkingDirectory)
-
-	if ret.Error != nil {
-		log.Errorf("err: %v", ret.Error)
-	}
-
-	log.Infof("stdout: %v", ret.Output)
-
-	return ret
-}
