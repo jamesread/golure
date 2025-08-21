@@ -6,6 +6,7 @@ import (
 	"context"
 	"os/exec"
 	"os"
+	"math"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -20,6 +21,7 @@ type ExecRequest struct {
 	Executable string
 	Args []string
 	WorkingDirectory string
+	Timeout float64
 }	
 
 type OutputStreamer struct {
@@ -39,22 +41,34 @@ func ExecShell(req *ExecRequest) (*ExecResult) {
 }
 
 func Exec(executable string, args []string, wd string) (*ExecResult) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(10) * time.Second)
+	req := &ExecRequest{
+		Executable: executable,
+		Args: args,
+		WorkingDirectory: wd,
+	}
+
+	return ExecWithRequest(req)
+}
+
+func ExecWithRequest(req *ExecRequest) (*ExecResult) {	
+	timeout := math.Max(10, req.Timeout)
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(timeout) * time.Second)
 	defer cancel()
 
 	streamer := &OutputStreamer{Output: &bytes.Buffer{}}
 
-	if wd == "" {
+	if req.WorkingDirectory == "" {
 		var err error
-		wd, err = os.Getwd()
+		req.WorkingDirectory, err = os.Getwd()
 
 		if err != nil {
 			return &ExecResult{Error: err}
 		}	
 	}
 
-	cmd := exec.CommandContext(ctx, executable, args...)
-	cmd.Dir = wd
+	cmd := exec.CommandContext(ctx, req.Executable, req.Args...)
+	cmd.Dir = req.WorkingDirectory
 	cmd.Stdout = streamer;
 	cmd.Stderr = streamer;
 
@@ -64,12 +78,8 @@ func Exec(executable string, args []string, wd string) (*ExecResult) {
 		Output: streamer.String(),
 		Error: runerr,
 		ExitCode: cmd.ProcessState.ExitCode(),
-		WorkingDirectory: wd,
+		WorkingDirectory: req.WorkingDirectory,
 	}
-}
-
-func ExecWithRequest(req *ExecRequest) (*ExecResult) {	
-	return Exec(req.Executable, req.Args, req.WorkingDirectory)
 }
 
 func ExecWithReqLog(req *ExecRequest) (*ExecResult) {
