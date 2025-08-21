@@ -23,7 +23,7 @@ type CloneOrPullRequest struct {
 }
 
 func CloneOrPull(req *CloneOrPullRequest) (*CloneOrPullResult) {
-	repoName := path.Base(gitUrl)
+	repoName := path.Base(req.GitUrl)
 	repoName = strings.TrimSuffix(repoName, ".git")
 
 	log.WithFields(log.Fields{
