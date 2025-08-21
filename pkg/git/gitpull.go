@@ -13,27 +13,39 @@ type CloneOrPullResult struct {
 	RepoName string
 	WasCloned bool
 	ExecResult *easyexec.ExecResult
+	Timeout float64
 }
 
-func CloneOrPull(gitUrl string, localDir string) (*CloneOrPullResult) {
+type CloneOrPullRequest struct {
+	GitUrl string
+	LocalDir string
+	Timeout float64
+}
+
+func CloneOrPull(req *CloneOrPullRequest) (*CloneOrPullResult) {
 	repoName := path.Base(gitUrl)
 	repoName = strings.TrimSuffix(repoName, ".git")
 
 	log.WithFields(log.Fields{
-		"gitUrl":    gitUrl,
-		"localDir":  localDir,
+		"gitUrl":    req.GitUrl,
+		"localDir":  req.LocalDir,
 		"repoName":  repoName,
 	}).Infof("GitPull")
 
-	if _, err := os.Stat(localDir); os.IsNotExist(err) {
-		os.Mkdir(localDir, 0755)
+	if req.Timeout <= 0 {
+		req.Timeout = 60.0 // Default timeout of 60 seconds
 	}
 
-	if _, err := os.Stat(filepath.Join(localDir, repoName)); os.IsNotExist(err) {
+	if _, err := os.Stat(req.LocalDir); os.IsNotExist(err) {
+		os.Mkdir(req.LocalDir, 0755)
+	}
+
+	if _, err := os.Stat(filepath.Join(req.LocalDir, repoName)); os.IsNotExist(err) {
 		req := &easyexec.ExecRequest{
 			Executable: "git",
-			Args: []string{"clone", gitUrl},
-			WorkingDirectory: localDir,
+			Args: []string{"clone", req.GitUrl},
+			WorkingDirectory: req.LocalDir,
+			Timeout: req.Timeout, 
 		}
 
 		return &CloneOrPullResult{
@@ -49,7 +61,7 @@ func CloneOrPull(gitUrl string, localDir string) (*CloneOrPullResult) {
 		req := &easyexec.ExecRequest{
 			Executable: "git",
 			Args: []string{"pull"},
-			WorkingDirectory: filepath.Join(localDir, repoName),
+			WorkingDirectory: filepath.Join(req.LocalDir, repoName),
 		}
 
 		return &CloneOrPullResult{
