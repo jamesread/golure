@@ -79,6 +79,17 @@ func TestHandler(t *testing.T) {
 	}
 }
 
+func TestHandlerRejectsSymlinkOutsideRoot(t *testing.T) {
+	root := newRoot(t)
+
+	require.NoError(t, os.Symlink(filepath.Join(filepath.Dir(root), "secret.txt"), filepath.Join(root, "leak.txt")))
+
+	rec := get(Handler(root, Options{}), http.MethodGet, "/leak.txt")
+
+	assert.Equal(t, http.StatusNotFound, rec.Code)
+	assert.NotContains(t, rec.Body.String(), "secret")
+}
+
 func TestHandlerNoCache(t *testing.T) {
 	h := Handler(newRoot(t), Options{NoCache: func(p string) bool {
 		return strings.HasSuffix(p, "/sw.js")
@@ -86,6 +97,12 @@ func TestHandlerNoCache(t *testing.T) {
 
 	assert.Contains(t, get(h, http.MethodGet, "/sw.js").Header().Get("Cache-Control"), "no-store")
 	assert.Empty(t, get(h, http.MethodGet, "/assets/app.js").Header().Get("Cache-Control"))
+}
+
+func TestHandlerMissingRoot(t *testing.T) {
+	h := Handler(filepath.Join(t.TempDir(), "absent"), Options{})
+
+	assert.Equal(t, http.StatusNotFound, get(h, http.MethodGet, "/").Code)
 }
 
 func TestHandlerWithoutIndex(t *testing.T) {
